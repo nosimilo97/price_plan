@@ -68,7 +68,7 @@ document.addEventListener('alpine:init', () => {
           await this.fetchPricePlans(); // Refresh the list of plans
           this.resetForm();
           this.closeModal();
-          location.reload();
+          // location.reload();
         } else {
           console.error("Failed to update the plan");
         }

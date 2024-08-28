@@ -57,7 +57,7 @@ app.post('/api/price_plan/update', async (req, res) => {
     const { name, sms_cost, call_cost } = req.body;
     console.log(res.body);
     
-    await db.run('UPDATE price_plan SET sms_price = ?, call_price = ? WHERE plan_name = ?', [name, sms_cost, call_cost ]);
+    await db.run('UPDATE price_plan SET sms_price = ?, call_price = ? WHERE plan_name = ?', [sms_cost, call_cost, name ]);
     res.json({ message: 'Price plan updated successfully' });
 });
 
