@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phone Bill Calculator</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="alpineJS.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
 <body>
@@ -27,36 +28,39 @@
         </div>
 
         <!-- Button to Calculate Total -->
-        <div>
+        <div class="text-center">
             <button class="mb-2 mx-auto btn btn-outline-secondary mt-4" @click="calculateTotal">Calculate Total</button>
         </div>
 
         <!-- Display Total Bill -->
-        <div x-show="total !== null">
-            <h2>Total Bill: R<span x-text="total"></span></h2>
+        <div class="text-center" x-show="total !== null">
+            <h3>Total Bill: R<span x-text="total"></span></h3>
         </div>
 
         <!-- Display List of Price Plans and their Totals -->
         <div>
-            <h3 class="my-2">Price Plans:</h3>
-            <div>
+            <h3 class="my-4">Price Plans:</h3>
+            <div class="d-flex flex-column gap-3">
                 <template x-for="plan in pricePlans" :key="plan.id">
-                    <div class="border p-2 m-2">
+                    <div class=" d-flex align-items-center border p-3 m-2">
                         <strong x-text="plan.plan_name"></strong> - 
                         Call Cost: R<span x-text="plan.call_price"></span>, 
                         SMS Cost: R<span x-text="plan.sms_price"></span>
-                        <button class="btn btn-primary btn-sm" @click="editPlan(plan)">Update Plan</button>
+                        <div class="ms-auto">
+                        <button class="btn btn-primary btn-sm me-2" @click="editPlan(plan)">Update Plan</button>
                         <button class="btn btn-danger btn-sm" @click="deletePlan(plan.id)">Delete</button>
-                    </div>
+                   </div> 
+                </div>
                 </template>
             </div>
         </div>
 
         <!-- Create New Price Plan Button -->
+         <div class="text-center mt-4">
         <button type="button" class="btn btn-success mt-4"  @click="openCreatePlanModal()">
             NEW Price Plan
         </button>
-
+</div>
         <!-- Modal for Creating/Editing Price Plan -->
         <div class="modal fade" id="createPlanModal" tabindex="-1" aria-labelledby="createPlanModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -79,141 +83,15 @@
                                 <label for="sms_cost" class="form-label">SMS Cost:</label>
                                 <input type="text" class="form-control" id="sms_cost" x-model="newPlan.sms_cost" required>
                             </div>
+                            <div class="text-center">
                             <button  type="submit" class="btn btn-primary" x-text="isEditing ? 'Save Changes' : 'Add Plan'"></button>
-                        </form>
+                        </div>
+                    </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('phoneBillApp', () => ({
-                pricePlans: [],
-                selectedPlan: '',
-                actions: '',
-                total: null,
-                displayForm: false,
-                newPlan: { id: null, name: '', call_cost: '', sms_cost: '' },
-                isEditing: false,
-
-                async fetchPricePlans() {
-    const response = await fetch('/api/price_plans/');
-    this.pricePlans = await response.json();
-    console.log(this.pricePlans); 
-},
-
-                async calculateTotal() {
-                    const response = await fetch('/api/phonebill/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            price_plan: this.selectedPlan,
-                            actions: this.actions
-                        })
-                    });
-
-                    const data = await response.json();
-                    this.total = data.total;
-                },
-
-                async createPlan() {
-                    const response = await fetch('/api/price_plan/create', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(this.newPlan)
-                    });
-
-
-                    if (response.ok) {
-                        this.fetchPricePlans();
-                        // this.pricePlans.push({ ...this.newPlan});
-                        // this.newPlan = { id: null, name: '', call_cost: '', sms_cost: '' };
-                        this.resetForm();
-                        this.closeModal();
-                    }
-                },
-
-                async updatePlan() {
-    if (!this.newPlan.id) {
-        console.error('Plan ID is missing. Cannot update.');
-        return;
-    }
-    const response = await fetch('/api/price_plan/update', { // Fixed URL syntax
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.newPlan)
-    });
-
-    if (response.ok) {
-        await this.fetchPricePlans(); // Refresh the list of plans
-        this.resetForm();
-        this.closeModal();
-    } else {
-        console.error('Failed to update the plan');
-    }
-},
-
-
-                async deletePlan(id) {
-                    const response = await fetch('/api/price_plan/delete', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ id })
-                    });
-
-                    if (response.ok) {
-                        this.fetchPricePlans();
-                        alert("Deleted successfully!");
-                    }
-                },
-
-                editPlan(plan) {
-    this.isEditing = true;
-    // Ensure the ID is populated correctly
-    this.newPlan = {
-        id: plan.id,
-        name: plan.plan_name,
-        call_cost: plan.call_price,
-        sms_cost: plan.sms_price
-    };
-    const modalElement = document.getElementById('createPlanModal');
-    const createPlanModal = new bootstrap.Modal(modalElement);
-    createPlanModal.show();
-},
-
-closeModal() {
-    const modalElement = document.getElementById('createPlanModal');
-    const createPlanModal = bootstrap.Modal.getInstance(modalElement);
-    if (createPlanModal) {
-        createPlanModal.hide();
-    }
-},
-
-openCreatePlanModal() {
-    this.resetForm(); // Reset the form state
-    this.isEditing = false; // Set editing to false for creating a new plan
-    const modalElement = document.getElementById('createPlanModal');
-    const createPlanModal = new bootstrap.Modal(modalElement);
-    createPlanModal.show();
-},
-
-        resetForm() {
-            this.newPlan = { id: null, name: '', call_cost: '', sms_cost: '' };
-        }
-
-            }));
-        });
-    </script>
 </body>
 </html>
